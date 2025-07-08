@@ -11,6 +11,8 @@ pub const api_authenticate_path = ["users", "auth"]
 
 pub const user_id_cookie_lifetime = "3600"
 
+pub const submit_roll_event_name = "submitRoll"
+
 pub fn get_api_url(subpath: List(String)) -> String {
   api_base_path <> "/" <> { list.intersperse(subpath, "/") |> string.concat }
 }

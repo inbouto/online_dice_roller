@@ -44,8 +44,8 @@ var List = class {
     return length4 - 1;
   }
 };
-function prepend(element3, tail) {
-  return new NonEmpty(element3, tail);
+function prepend(element4, tail) {
+  return new NonEmpty(element4, tail);
 }
 function toList(elements, tail) {
   return List.fromArray(elements, tail);
@@ -2298,8 +2298,8 @@ function list(data, decode2, pushPath, index5, emptyList) {
     return [emptyList, List.fromArray([error])];
   }
   const decoded = [];
-  for (const element3 of data) {
-    const layer = decode2(element3);
+  for (const element4 of data) {
+    const layer = decode2(element4);
     const [out, errors] = layer;
     if (errors instanceof NonEmpty) {
       const [_, errors2] = pushPath(layer, index5.toString());
@@ -2685,6 +2685,9 @@ function to_string2(json2) {
   return json_to_string(json2);
 }
 function string4(input2) {
+  return identity2(input2);
+}
+function int3(input2) {
   return identity2(input2);
 }
 function object2(entries) {
@@ -3661,14 +3664,14 @@ function to_uri(request) {
   );
 }
 function from_uri(uri) {
-  return then$(
+  return try$(
     (() => {
       let _pipe = uri.scheme;
       let _pipe$1 = unwrap(_pipe, "");
       return scheme_from_string(_pipe$1);
     })(),
     (scheme) => {
-      return then$(
+      return try$(
         (() => {
           let _pipe = uri.host;
           return to_result(_pipe, void 0);
@@ -4367,6 +4370,17 @@ function text(key2, mapper, content) {
   return new Text(text_kind, key2, mapper, content);
 }
 var unsafe_inner_html_kind = 3;
+function unsafe_inner_html(key2, mapper, namespace, tag, attributes, inner_html) {
+  return new UnsafeInnerHtml(
+    unsafe_inner_html_kind,
+    key2,
+    mapper,
+    namespace,
+    tag,
+    prepare(attributes),
+    inner_html
+  );
+}
 function set_fragment_key(loop$key, loop$children, loop$index, loop$new_children, loop$keyed_children) {
   while (true) {
     let key2 = loop$key;
@@ -4887,6 +4901,16 @@ function fragment2(children) {
     count_fragment_children(children, 0)
   );
 }
+function unsafe_raw_html(namespace, tag, attributes, inner_html) {
+  return unsafe_inner_html(
+    "",
+    identity3,
+    namespace,
+    tag,
+    attributes,
+    inner_html
+  );
+}
 
 // build/dev/javascript/lustre/lustre/effect.mjs
 var Effect = class extends CustomType {
@@ -5157,21 +5181,31 @@ function post(url, body2, handler) {
 
 // build/dev/javascript/common/common.mjs
 var User = class extends CustomType {
-  constructor(name2) {
+  constructor(name2, roll) {
     super();
     this.name = name2;
+    this.roll = roll;
   }
 };
 function user_to_json(user) {
   let name2 = user.name;
-  return object2(toList([["name", string4(name2)]]));
+  let roll = user.roll;
+  return object2(
+    toList([["name", string4(name2)], ["roll", int3(roll)]])
+  );
 }
 function user_decoder() {
   return field(
     "name",
     string2,
     (name2) => {
-      return success(new User(name2));
+      return field(
+        "roll",
+        int2,
+        (roll) => {
+          return success(new User(name2, roll));
+        }
+      );
     }
   );
 }
@@ -5269,6 +5303,9 @@ function ul(attrs, children) {
 }
 function strong(attrs, children) {
   return element2("strong", attrs, children);
+}
+function script(attrs, js) {
+  return unsafe_raw_html("", "script", attrs, js);
 }
 function button(attrs, children) {
   return element2("button", attrs, children);
@@ -5379,89 +5416,6 @@ function on_submit(msg) {
     )
   );
   return prevent_default(_pipe);
-}
-
-// build/dev/javascript/common/view.mjs
-function view_logged_in(local_user, userlist) {
-  let users = map(
-    userlist,
-    (user) => {
-      return li(toList([]), toList([text3(user.name)]));
-    }
-  );
-  let users$1 = prepend(
-    li(
-      toList([]),
-      toList([
-        strong(toList([]), toList([text3(local_user.name)])),
-        text3(" (you)")
-      ])
-    ),
-    users
-  );
-  let userlist$1 = ul(toList([]), users$1);
-  let local_user$1 = h2(
-    toList([]),
-    toList([text3("Welcome " + local_user.name)])
-  );
-  return div(toList([]), toList([local_user$1, userlist$1]));
-}
-function view_input(form2, type_2, name2, label2) {
-  let state = field_state(form2, name2);
-  return div(
-    toList([]),
-    toList([
-      label(
-        toList([for$(name2)]),
-        toList([text3(label2), text3(": ")])
-      ),
-      input(
-        toList([
-          type_(type_2),
-          id(name2),
-          name(name2)
-        ])
-      ),
-      (() => {
-        if (state instanceof Ok) {
-          return none();
-        } else {
-          let error_message = state[0];
-          return p(toList([]), toList([text3(error_message)]));
-        }
-      })()
-    ])
-  );
-}
-function view_register(form2) {
-  return form(
-    toList([
-      on_submit((var0) => {
-        return new UserClickedRegister(var0);
-      })
-    ]),
-    toList([
-      h1(toList([]), toList([text3("Register")])),
-      view_input(form2, "text", "username", "Username"),
-      div(
-        toList([]),
-        toList([button(toList([]), toList([text3("Login")]))])
-      )
-    ])
-  );
-}
-function view(model) {
-  let _block;
-  if (model instanceof Login) {
-    let form2 = model[0];
-    _block = view_register(form2);
-  } else {
-    let current_user = model.current_user;
-    let users = model.users;
-    _block = view_logged_in(current_user, users);
-  }
-  let content = _block;
-  return div(toList([]), toList([content]));
 }
 
 // build/dev/javascript/lustre/lustre/vdom/patch.mjs
@@ -7340,18 +7294,12 @@ function start3(app, selector, start_args) {
   );
 }
 
-// build/dev/javascript/plinth/document_ffi.mjs
-function querySelector(query) {
-  let found = document.querySelector(query);
-  if (!found) {
-    return new Error();
-  }
-  return new Ok(found);
+// build/dev/javascript/lustre/lustre/server_component.mjs
+function element3(attributes, children) {
+  return element2("lustre-server-component", attributes, children);
 }
-
-// build/dev/javascript/plinth/element_ffi.mjs
-function innerText(element3) {
-  return element3.innerText;
+function route(path) {
+  return attribute2("route", path);
 }
 
 // build/dev/javascript/common/config.mjs
@@ -7371,6 +7319,119 @@ var api_register_new_user_path = /* @__PURE__ */ toList([
   "register"
 ]);
 
+// build/dev/javascript/common/view.mjs
+function view_logged_in(local_user, userlist) {
+  let users = map(
+    userlist,
+    (user) => {
+      return li(toList([]), toList([text3(user.name)]));
+    }
+  );
+  let users$1 = prepend(
+    li(
+      toList([]),
+      toList([
+        strong(toList([]), toList([text3(local_user.name)])),
+        text3(" (you)")
+      ])
+    ),
+    users
+  );
+  let userlist$1 = ul(toList([]), users$1);
+  let local_user$1 = h2(
+    toList([]),
+    toList([text3("Welcome " + local_user.name)])
+  );
+  let server_comp = element3(
+    toList([route("/ws")]),
+    toList([])
+  );
+  let temp_component_event_handler_script = script(
+    toList([]),
+    "\n      const counter = document.querySelector('lustre-server-component');\n\n      counter.addEventListener('submitRoll', event => {\n        window.alert(`The roll value is now ${event.detail}`);\n      })\n      "
+  );
+  return div(
+    toList([]),
+    toList([
+      local_user$1,
+      userlist$1,
+      server_comp,
+      temp_component_event_handler_script
+    ])
+  );
+}
+function view_input(form2, type_2, name2, label2) {
+  let state = field_state(form2, name2);
+  return div(
+    toList([]),
+    toList([
+      label(
+        toList([for$(name2)]),
+        toList([text3(label2), text3(": ")])
+      ),
+      input(
+        toList([
+          type_(type_2),
+          id(name2),
+          name(name2)
+        ])
+      ),
+      (() => {
+        if (state instanceof Ok) {
+          return none();
+        } else {
+          let error_message = state[0];
+          return p(toList([]), toList([text3(error_message)]));
+        }
+      })()
+    ])
+  );
+}
+function view_register(form2) {
+  return form(
+    toList([
+      on_submit((var0) => {
+        return new UserClickedRegister(var0);
+      })
+    ]),
+    toList([
+      h1(toList([]), toList([text3("Register")])),
+      view_input(form2, "text", "username", "Username"),
+      div(
+        toList([]),
+        toList([button(toList([]), toList([text3("Login")]))])
+      )
+    ])
+  );
+}
+function view(model) {
+  let _block;
+  if (model instanceof Login) {
+    let form2 = model[0];
+    _block = view_register(form2);
+  } else {
+    let current_user = model.current_user;
+    let users = model.users;
+    _block = view_logged_in(current_user, users);
+  }
+  let content = _block;
+  return div(toList([]), toList([content]));
+}
+
+// build/dev/javascript/plinth/document_ffi.mjs
+function querySelector(query) {
+  let found = document.querySelector(query);
+  if (!found) {
+    return new Error();
+  }
+  return new Ok(found);
+}
+
+// build/dev/javascript/plinth/element_ffi.mjs
+function innerText(element4) {
+  return element4.innerText;
+}
+
 // build/dev/javascript/client/side_effects.mjs
 function register_user(user) {
   let body2 = user_to_json(user);
@@ -7379,7 +7440,7 @@ function register_user(user) {
     url,
     body2,
     expect_json(
-      string2,
+      user_decoder(),
       (var0) => {
         return new ServerRegisteredNewUser(var0);
       }
@@ -7411,9 +7472,9 @@ function server_registered_new_user(model, local_username_result) {
   let form2 = _block;
   let $ = echo(local_username_result, "src/update.gleam", 29);
   if ($ instanceof Ok) {
-    let username = $[0];
+    let user = $[0];
     return [
-      new LoggedIn(new User(username), toList([])),
+      new LoggedIn(user, toList([])),
       fetch_current_users()
     ];
   } else {
@@ -7422,7 +7483,7 @@ function server_registered_new_user(model, local_username_result) {
 }
 function server_returned_authentication_response(_, response) {
   let _block;
-  let $ = echo(response, "src/update.gleam", 42);
+  let $ = echo(response, "src/update.gleam", 39);
   if ($ instanceof Ok) {
     let user = $[0];
     _block = new LoggedIn(user, toList([]));
@@ -7451,7 +7512,7 @@ function server_returned_user_list(model, users_result) {
 function decode_registration_data(values3) {
   let _pipe = decoding(
     parameter((username) => {
-      return new User(username);
+      return new User(username, 0);
     })
   );
   let _pipe$1 = with_values(_pipe, values3);

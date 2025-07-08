@@ -9,6 +9,14 @@ pub type Model {
   LoggedIn(current_user: common.User, users: List(common.User))
 }
 
+pub type Msg {
+  ServerRegisteredNewUser(Result(common.User, rsvp.Error))
+  ServerReturnedUserList(Result(List(common.User), rsvp.Error))
+  ServerReturnedAuthenticationResponse(Result(common.User, rsvp.Error))
+  UserClickedRegister(List(#(String, String)))
+  // UserSubmittedRoll(value: Int)
+}
+
 pub fn model_to_json(model: Model) -> json.Json {
   case model {
     Login(_) -> json.object([#("type", json.string("login"))])
@@ -32,11 +40,4 @@ pub fn model_decoder() -> decode.Decoder(Model) {
     }
     _ -> decode.failure(Login(form.new()), "Model")
   }
-}
-
-pub type Msg {
-  ServerRegisteredNewUser(Result(String, rsvp.Error))
-  ServerReturnedUserList(Result(List(common.User), rsvp.Error))
-  ServerReturnedAuthenticationResponse(Result(common.User, rsvp.Error))
-  UserClickedRegister(List(#(String, String)))
 }

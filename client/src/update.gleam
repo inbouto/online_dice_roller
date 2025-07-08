@@ -20,7 +20,7 @@ pub fn update(
 
 fn server_registered_new_user(
   model: mvu.Model,
-  local_username_result: Result(String, rsvp.Error),
+  local_username_result: Result(common.User, rsvp.Error),
 ) -> #(mvu.Model, effect.Effect(mvu.Msg)) {
   let form = case model {
     mvu.LoggedIn(_, _) -> form.new()
@@ -28,10 +28,7 @@ fn server_registered_new_user(
   }
   case echo local_username_result {
     Error(_) -> #(mvu.Login(form), effect.none())
-    Ok(username) -> #(
-      mvu.LoggedIn(common.User(username), []),
-      side_effects.fetch_current_users(),
-    )
+    Ok(user) -> #(mvu.LoggedIn(user, []), side_effects.fetch_current_users())
   }
 }
 
@@ -81,7 +78,7 @@ fn decode_registration_data(
 ) -> Result(common.User, Form) {
   form.decoding({
     use username <- form.parameter
-    common.User(username)
+    common.User(username, roll: 0)
   })
   |> form.with_values(values)
   |> form.field("username", form.string |> form.and(form.must_not_be_empty))

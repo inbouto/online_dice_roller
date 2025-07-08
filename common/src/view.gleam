@@ -1,10 +1,13 @@
 import common
+import config
 import formal/form
+import gleam/dynamic/decode
 import gleam/list
 import lustre/attribute
 import lustre/element
 import lustre/element/html
 import lustre/event
+import lustre/server_component
 import mvu
 
 pub fn view(model: mvu.Model) -> element.Element(mvu.Msg) {
@@ -31,25 +34,33 @@ fn view_logged_in(
 
   let userlist = html.ul([], users)
   let local_user = html.h2([], [html.text("Welcome " <> local_user.name)])
-  html.div([], [local_user, userlist])
+  let server_comp =
+    server_component.element([server_component.route("/ws")], [])
+  let temp_component_event_handler_script =
+    html.script(
+      [],
+      "
+      const counter = document.querySelector('lustre-server-component');
+
+      counter.addEventListener('submitRoll', event => {
+        window.alert(`The roll value is now ${event.detail}`);
+      })
+      ",
+    )
+  html.div([], [
+    local_user,
+    userlist,
+    server_comp,
+    temp_component_event_handler_script,
+  ])
 }
 
 fn view_register(form: form.Form) -> element.Element(mvu.Msg) {
-  html.form(
-    [
-      // The message provided to the built-in `on_submit` handler receives the
-      // `FormData` associated with the form as a List of (name, value) tuples.
-      //
-      // The event handler also calls `preventDefault()` on the form, such that
-      // Lustre can handle the submission instead off being sent off to the server.
-      event.on_submit(mvu.UserClickedRegister),
-    ],
-    [
-      html.h1([], [html.text("Register")]),
-      view_input(form, is: "text", name: "username", label: "Username"),
-      html.div([], [html.button([], [html.text("Login")])]),
-    ],
-  )
+  html.form([event.on_submit(mvu.UserClickedRegister)], [
+    html.h1([], [html.text("Register")]),
+    view_input(form, is: "text", name: "username", label: "Username"),
+    html.div([], [html.button([], [html.text("Login")])]),
+  ])
 }
 
 fn view_input(

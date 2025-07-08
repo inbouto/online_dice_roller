@@ -1,6 +1,5 @@
 import common
 import config
-import gleam/dynamic/decode
 import lustre/effect
 import mvu
 import rsvp
@@ -11,7 +10,7 @@ pub fn register_user(user: common.User) -> effect.Effect(mvu.Msg) {
   rsvp.post(
     url,
     body,
-    rsvp.expect_json(decode.string, mvu.ServerRegisteredNewUser),
+    rsvp.expect_json(common.user_decoder(), mvu.ServerRegisteredNewUser),
   )
 }
 
