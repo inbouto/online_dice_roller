@@ -7,11 +7,13 @@ import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
 import gleam/json
 import gleam/option.{None}
+import lustre
 import lustre/attribute
 import lustre/element
 import lustre/element/html
 import mist.{type Connection, type ResponseData}
 import mvu
+import player_roller
 import simplifile
 import storail
 import store
@@ -30,10 +32,6 @@ pub fn main() {
       decoder: common.user_decoder(),
       config: storail_config,
     )
-
-  // let assert Ok(_) = write_store_entry(common.User("titi"), users)
-  // let assert Ok(_) = write_store_entry(common.User("tata"), users)
-  // let assert Ok(_) = write_store_entry(common.User("tutu"), users)
 
   let empty_body = mist.Bytes(bytes_tree.new())
   let not_found = response.set_body(response.new(404), empty_body)
@@ -70,17 +68,10 @@ fn serve(
   let res = response.new(200)
   let model = case store.get_user(req, user_store) {
     Error(_) -> mvu.Login(form.new())
-    Ok(user) ->
-      mvu.LoggedIn(current_user: user, users: store.get_users(req, user_store))
+    Ok(user) -> mvu.LoggedIn(current_user: user)
   }
   let model_string = mvu.model_to_json(model) |> json.to_string
   let rendered_page = html.div([attribute.id("app")], [view.view(model)])
-
-  // let server_component =
-  //   element.element("lustre-server-component", [server_component.route("/ws")], [
-  //     html.p([], [html.text("My counter is here")]),
-  //   ])
-
   let html =
     html.html([], [
       html.head([], [

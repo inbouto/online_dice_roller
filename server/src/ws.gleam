@@ -6,12 +6,12 @@ import gleam/option.{type Option, Some}
 import lustre
 import lustre/server_component
 import mist.{type Connection, type ResponseData}
-import roller
+import player_roller
 
 pub type Model {
   Model(
-    component: lustre.Runtime(roller.Msg),
-    self: process.Subject(server_component.ClientMessage(roller.Msg)),
+    component: lustre.Runtime(player_roller.Msg),
+    self: process.Subject(server_component.ClientMessage(player_roller.Msg)),
   )
 }
 
@@ -21,9 +21,12 @@ pub fn serve(request: Request(Connection)) -> Response(ResponseData) {
 
 fn init(
   _,
-) -> #(Model, Option(Selector(server_component.ClientMessage(roller.Msg)))) {
+) -> #(
+  Model,
+  Option(Selector(server_component.ClientMessage(player_roller.Msg))),
+) {
   let assert Ok(component) =
-    roller.component() |> lustre.start_server_component(Nil)
+    player_roller.component() |> lustre.start_server_component(Nil)
 
   let self = process.new_subject()
   let selector =
@@ -37,7 +40,9 @@ fn init(
 
 fn handler(
   state: Model,
-  message: mist.WebsocketMessage(server_component.ClientMessage(roller.Msg)),
+  message: mist.WebsocketMessage(
+    server_component.ClientMessage(player_roller.Msg),
+  ),
   conn: mist.WebsocketConnection,
 ) {
   case message {

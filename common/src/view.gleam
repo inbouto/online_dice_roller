@@ -1,8 +1,5 @@
 import common
-import config
 import formal/form
-import gleam/dynamic/decode
-import gleam/list
 import lustre/attribute
 import lustre/element
 import lustre/element/html
@@ -12,47 +9,27 @@ import mvu
 
 pub fn view(model: mvu.Model) -> element.Element(mvu.Msg) {
   let content = case model {
-    mvu.LoggedIn(current_user:, users:) -> view_logged_in(current_user, users)
+    mvu.LoggedIn(current_user:) -> view_logged_in(current_user)
     mvu.Login(form) -> view_register(form)
   }
   html.div([], [content])
 }
 
-fn view_logged_in(
-  local_user: common.User,
-  userlist: List(common.User),
-) -> element.Element(mvu.Msg) {
-  let users =
-    list.map(userlist, fn(user) { html.li([], [html.text(user.name)]) })
-  let users = [
-    html.li([], [
-      html.strong([], [html.text(local_user.name)]),
-      html.text(" (you)"),
-    ]),
-    ..users
-  ]
-
-  let userlist = html.ul([], users)
+fn view_logged_in(local_user: common.User) -> element.Element(mvu.Msg) {
   let local_user = html.h2([], [html.text("Welcome " <> local_user.name)])
   let server_comp =
-    server_component.element([server_component.route("/ws")], [])
-  let temp_component_event_handler_script =
-    html.script(
+    server_component.element(
+      [
+        server_component.route("/ws"),
+        // event.on(config.submit_roll_event_name, {
+      //   use new_roll_value <- decode.field("detail", decode.int)
+      //   mvu.UserSubmittedRoll(new_roll_value)
+      //   |> decode.success
+      // }),
+      ],
       [],
-      "
-      const counter = document.querySelector('lustre-server-component');
-
-      counter.addEventListener('submitRoll', event => {
-        window.alert(`The roll value is now ${event.detail}`);
-      })
-      ",
     )
-  html.div([], [
-    local_user,
-    userlist,
-    server_comp,
-    temp_component_event_handler_script,
-  ])
+  html.div([], [local_user, server_comp])
 }
 
 fn view_register(form: form.Form) -> element.Element(mvu.Msg) {

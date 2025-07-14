@@ -4370,17 +4370,6 @@ function text(key2, mapper, content) {
   return new Text(text_kind, key2, mapper, content);
 }
 var unsafe_inner_html_kind = 3;
-function unsafe_inner_html(key2, mapper, namespace, tag, attributes, inner_html) {
-  return new UnsafeInnerHtml(
-    unsafe_inner_html_kind,
-    key2,
-    mapper,
-    namespace,
-    tag,
-    prepare(attributes),
-    inner_html
-  );
-}
 function set_fragment_key(loop$key, loop$children, loop$index, loop$new_children, loop$keyed_children) {
   while (true) {
     let key2 = loop$key;
@@ -4901,16 +4890,6 @@ function fragment2(children) {
     count_fragment_children(children, 0)
   );
 }
-function unsafe_raw_html(namespace, tag, attributes, inner_html) {
-  return unsafe_inner_html(
-    "",
-    identity3,
-    namespace,
-    tag,
-    attributes,
-    inner_html
-  );
-}
 
 // build/dev/javascript/lustre/lustre/effect.mjs
 var Effect = class extends CustomType {
@@ -5124,29 +5103,6 @@ function to_uri2(uri_string) {
   let _pipe = _block;
   return replace_error(_pipe, new BadUrl(uri_string));
 }
-function get2(url, handler) {
-  let $ = to_uri2(url);
-  if ($ instanceof Ok) {
-    let uri = $[0];
-    let _pipe = from_uri(uri);
-    let _pipe$1 = map3(
-      _pipe,
-      (_capture) => {
-        return send2(_capture, handler);
-      }
-    );
-    let _pipe$2 = map_error(
-      _pipe$1,
-      (_) => {
-        return reject(new BadUrl(url), handler);
-      }
-    );
-    return unwrap_both(_pipe$2);
-  } else {
-    let err = $[0];
-    return reject(err, handler);
-  }
-}
 function post(url, body2, handler) {
   let $ = to_uri2(url);
   if ($ instanceof Ok) {
@@ -5209,9 +5165,6 @@ function user_decoder() {
     }
   );
 }
-function user_list_decoder() {
-  return list2(user_decoder());
-}
 
 // build/dev/javascript/common/mvu.mjs
 var Login = class extends CustomType {
@@ -5221,19 +5174,12 @@ var Login = class extends CustomType {
   }
 };
 var LoggedIn = class extends CustomType {
-  constructor(current_user, users) {
+  constructor(current_user) {
     super();
     this.current_user = current_user;
-    this.users = users;
   }
 };
 var ServerRegisteredNewUser = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var ServerReturnedUserList = class extends CustomType {
   constructor($0) {
     super();
     this[0] = $0;
@@ -5263,13 +5209,7 @@ function model_decoder() {
           "current_user",
           user_decoder(),
           (current_user) => {
-            return field(
-              "users",
-              user_list_decoder(),
-              (users) => {
-                return success(new LoggedIn(current_user, users));
-              }
-            );
+            return success(new LoggedIn(current_user));
           }
         );
       } else {
@@ -5292,20 +5232,8 @@ function h2(attrs, children) {
 function div(attrs, children) {
   return element2("div", attrs, children);
 }
-function li(attrs, children) {
-  return element2("li", attrs, children);
-}
 function p(attrs, children) {
   return element2("p", attrs, children);
-}
-function ul(attrs, children) {
-  return element2("ul", attrs, children);
-}
-function strong(attrs, children) {
-  return element2("strong", attrs, children);
-}
-function script(attrs, js) {
-  return unsafe_raw_html("", "script", attrs, js);
 }
 function button(attrs, children) {
   return element2("button", attrs, children);
@@ -7302,42 +7230,8 @@ function route(path) {
   return attribute2("route", path);
 }
 
-// build/dev/javascript/common/config.mjs
-var api_base_path = "api";
-function get_api_url(subpath) {
-  return api_base_path + "/" + (() => {
-    let _pipe = intersperse(subpath, "/");
-    return concat2(_pipe);
-  })();
-}
-var api_current_users_path = /* @__PURE__ */ toList([
-  "users",
-  "current"
-]);
-var api_register_new_user_path = /* @__PURE__ */ toList([
-  "users",
-  "register"
-]);
-
 // build/dev/javascript/common/view.mjs
-function view_logged_in(local_user, userlist) {
-  let users = map(
-    userlist,
-    (user) => {
-      return li(toList([]), toList([text3(user.name)]));
-    }
-  );
-  let users$1 = prepend(
-    li(
-      toList([]),
-      toList([
-        strong(toList([]), toList([text3(local_user.name)])),
-        text3(" (you)")
-      ])
-    ),
-    users
-  );
-  let userlist$1 = ul(toList([]), users$1);
+function view_logged_in(local_user) {
   let local_user$1 = h2(
     toList([]),
     toList([text3("Welcome " + local_user.name)])
@@ -7346,19 +7240,7 @@ function view_logged_in(local_user, userlist) {
     toList([route("/ws")]),
     toList([])
   );
-  let temp_component_event_handler_script = script(
-    toList([]),
-    "\n      const counter = document.querySelector('lustre-server-component');\n\n      counter.addEventListener('submitRoll', event => {\n        window.alert(`The roll value is now ${event.detail}`);\n      })\n      "
-  );
-  return div(
-    toList([]),
-    toList([
-      local_user$1,
-      userlist$1,
-      server_comp,
-      temp_component_event_handler_script
-    ])
-  );
+  return div(toList([]), toList([local_user$1, server_comp]));
 }
 function view_input(form2, type_2, name2, label2) {
   let state = field_state(form2, name2);
@@ -7411,8 +7293,7 @@ function view(model) {
     _block = view_register(form2);
   } else {
     let current_user = model.current_user;
-    let users = model.users;
-    _block = view_logged_in(current_user, users);
+    _block = view_logged_in(current_user);
   }
   let content = _block;
   return div(toList([]), toList([content]));
@@ -7432,6 +7313,19 @@ function innerText(element4) {
   return element4.innerText;
 }
 
+// build/dev/javascript/common/config.mjs
+var api_base_path = "api";
+function get_api_url(subpath) {
+  return api_base_path + "/" + (() => {
+    let _pipe = intersperse(subpath, "/");
+    return concat2(_pipe);
+  })();
+}
+var api_register_new_user_path = /* @__PURE__ */ toList([
+  "users",
+  "register"
+]);
+
 // build/dev/javascript/client/side_effects.mjs
 function register_user(user) {
   let body2 = user_to_json(user);
@@ -7447,18 +7341,6 @@ function register_user(user) {
     )
   );
 }
-function fetch_current_users() {
-  let url = "/" + get_api_url(api_current_users_path);
-  return get2(
-    url,
-    expect_json(
-      user_list_decoder(),
-      (var0) => {
-        return new ServerReturnedUserList(var0);
-      }
-    )
-  );
-}
 
 // build/dev/javascript/client/update.mjs
 function server_registered_new_user(model, local_username_result) {
@@ -7470,44 +7352,25 @@ function server_registered_new_user(model, local_username_result) {
     _block = new$();
   }
   let form2 = _block;
-  let $ = echo(local_username_result, "src/update.gleam", 29);
+  let $ = echo(local_username_result, "src/update.gleam", 28);
   if ($ instanceof Ok) {
     let user = $[0];
-    return [
-      new LoggedIn(user, toList([])),
-      fetch_current_users()
-    ];
+    return [new LoggedIn(user), none2()];
   } else {
     return [new Login(form2), none2()];
   }
 }
 function server_returned_authentication_response(_, response) {
   let _block;
-  let $ = echo(response, "src/update.gleam", 39);
+  let $ = echo(response, "src/update.gleam", 38);
   if ($ instanceof Ok) {
     let user = $[0];
-    _block = new LoggedIn(user, toList([]));
+    _block = new LoggedIn(user);
   } else {
     _block = new Login(new$());
   }
   let model = _block;
-  return [model, fetch_current_users()];
-}
-function server_returned_user_list(model, users_result) {
-  let _block;
-  if (model instanceof Login) {
-    _block = model;
-  } else {
-    if (users_result instanceof Ok) {
-      let users = users_result[0];
-      let _record = model;
-      _block = new LoggedIn(_record.current_user, users);
-    } else {
-      _block = new Login(new$());
-    }
-  }
-  let model$1 = _block;
-  return [model$1, none2()];
+  return [model, none2()];
 }
 function decode_registration_data(values3) {
   let _pipe = decoding(
@@ -7549,9 +7412,6 @@ function update2(model, msg) {
   if (msg instanceof ServerRegisteredNewUser) {
     let r = msg[0];
     return server_registered_new_user(model, r);
-  } else if (msg instanceof ServerReturnedUserList) {
-    let r = msg[0];
-    return server_returned_user_list(model, r);
   } else if (msg instanceof ServerReturnedAuthenticationResponse) {
     let r = msg[0];
     return server_returned_authentication_response(model, r);

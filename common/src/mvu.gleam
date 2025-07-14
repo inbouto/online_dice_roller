@@ -6,12 +6,11 @@ import rsvp
 
 pub type Model {
   Login(Form)
-  LoggedIn(current_user: common.User, users: List(common.User))
+  LoggedIn(current_user: common.User)
 }
 
 pub type Msg {
   ServerRegisteredNewUser(Result(common.User, rsvp.Error))
-  ServerReturnedUserList(Result(List(common.User), rsvp.Error))
   ServerReturnedAuthenticationResponse(Result(common.User, rsvp.Error))
   UserClickedRegister(List(#(String, String)))
   // UserSubmittedRoll(value: Int)
@@ -20,11 +19,10 @@ pub type Msg {
 pub fn model_to_json(model: Model) -> json.Json {
   case model {
     Login(_) -> json.object([#("type", json.string("login"))])
-    LoggedIn(current_user:, users:) ->
+    LoggedIn(current_user:) ->
       json.object([
         #("type", json.string("logged_in")),
         #("current_user", common.user_to_json(current_user)),
-        #("users", common.user_list_to_json(users)),
       ])
   }
 }
@@ -35,8 +33,7 @@ pub fn model_decoder() -> decode.Decoder(Model) {
     "login" -> decode.success(Login(form.new()))
     "logged_in" -> {
       use current_user <- decode.field("current_user", common.user_decoder())
-      use users <- decode.field("users", common.user_list_decoder())
-      decode.success(LoggedIn(current_user:, users:))
+      decode.success(LoggedIn(current_user))
     }
     _ -> decode.failure(Login(form.new()), "Model")
   }
